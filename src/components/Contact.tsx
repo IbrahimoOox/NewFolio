@@ -16,6 +16,33 @@ const Contact: React.FC = () => {
   
   const formRef = useRef<HTMLFormElement>(null);
 
+  // EmailJS configuration with debugging
+  const emailjsConfig = {
+    serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_ibrahimox22pdw',
+    templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_bt0okth',
+    publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'TkPMpnmByU-npNkLU'
+  };
+
+  // Debug environment variables on component mount
+  React.useEffect(() => {
+    console.log('🔧 EmailJS Configuration:', {
+      serviceId: emailjsConfig.serviceId,
+      templateId: emailjsConfig.templateId,
+      publicKey: emailjsConfig.publicKey ? '***' + emailjsConfig.publicKey.slice(-4) : 'missing',
+      envLoaded: !!import.meta.env.VITE_EMAILJS_SERVICE_ID
+    });
+  }, []);
+
+  // Initialize EmailJS
+  React.useEffect(() => {
+    if (emailjsConfig.publicKey) {
+      emailjs.init(emailjsConfig.publicKey);
+      console.log('✅ EmailJS initialized');
+    } else {
+      console.error('❌ EmailJS Public Key is missing');
+    }
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -28,11 +55,19 @@ const Contact: React.FC = () => {
     e.preventDefault();
     if (!formRef.current) return;
     
+    console.log('🔄 Starting form submission...');
+
+    // Check if EmailJS is configured
+    if (!emailjsConfig.serviceId || !emailjsConfig.templateId || !emailjsConfig.publicKey) {
+      console.error('❌ EmailJS configuration missing:', emailjsConfig);
+      setSubmitStatus('error');
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
     try {
-      // Test with simple parameters first
       const templateParams = {
         from_name: formData.from_name,
         from_email: formData.from_email,
@@ -42,28 +77,50 @@ const Contact: React.FC = () => {
         reply_to: formData.from_email
       };
 
+      console.log('📧 Sending email with params:', templateParams);
+
       const result = await emailjs.send(
-        'service_ibrahimox22pdw',
-        'template_bt0okth',
+        emailjsConfig.serviceId,
+        emailjsConfig.templateId,
         templateParams,
-        'TkPMpnmByU-npNkLU'
+        emailjsConfig.publicKey
       );
 
-      console.log('EmailJS Response:', result);
+      console.log('✅ EmailJS Success Response:', result);
       
-      if (result.status === 200 || result.text === 'OK') {
+      if (result.status === 200) {
         setSubmitStatus('success');
-        setFormData({ from_name: '', from_email: '', subject: '', message: '' });
+        setFormData({ 
+          from_name: '', 
+          from_email: '', 
+          subject: '', 
+          message: '' 
+        });
       } else {
         throw new Error(`EmailJS returned status: ${result.status}`);
       }
-    } catch (error) {
-      console.error('EmailJS Error:', error);
+    } catch (error: any) {
+      console.error('❌ EmailJS Error Details:', {
+        status: error?.status,
+        text: error?.text,
+        message: error?.message,
+        fullError: error
+      });
+      
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
       setTimeout(() => setSubmitStatus('idle'), 5000);
     }
+  };
+
+  // Fallback to mailto if EmailJS fails
+  const handleMailtoFallback = () => {
+    const subject = encodeURIComponent(formData.subject || 'Contact Form Submission');
+    const body = encodeURIComponent(
+      `Name: ${formData.from_name}\nEmail: ${formData.from_email}\n\nMessage: ${formData.message}`
+    );
+    window.location.href = `mailto:${resumeData.personal_info.email}?subject=${subject}&body=${body}`;
   };
 
   const containerVariants = {
@@ -291,7 +348,8 @@ const Contact: React.FC = () => {
                     value={formData.from_name}
                     onChange={handleInputChange}
                     required
-                    className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-colors"
+                    disabled={isSubmitting}
+                    className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-colors disabled:opacity-50"
                     placeholder="Your name"
                   />
                 </div>
@@ -309,7 +367,8 @@ const Contact: React.FC = () => {
                     value={formData.from_email}
                     onChange={handleInputChange}
                     required
-                    className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-colors"
+                    disabled={isSubmitting}
+                    className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-colors disabled:opacity-50"
                     placeholder="your.email@example.com"
                   />
                 </div>
@@ -327,7 +386,8 @@ const Contact: React.FC = () => {
                     value={formData.subject}
                     onChange={handleInputChange}
                     required
-                    className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-colors"
+                    disabled={isSubmitting}
+                    className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-colors disabled:opacity-50"
                     placeholder="What's this about?"
                   />
                 </div>
@@ -344,8 +404,9 @@ const Contact: React.FC = () => {
                     value={formData.message}
                     onChange={handleInputChange}
                     required
+                    disabled={isSubmitting}
                     rows={5}
-                    className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-colors resize-none"
+                    className="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-colors resize-none disabled:opacity-50"
                     placeholder="Tell me about your project or inquiry..."
                   />
                 </div>
@@ -383,13 +444,24 @@ const Contact: React.FC = () => {
                 )}
 
                 {submitStatus === 'error' && (
-                  <motion.div
-                    className="mt-4 p-3 bg-red-900/30 border border-red-500/30 rounded-lg text-red-400 text-sm"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    ❌ Email service temporarily unavailable. Please contact me directly at {resumeData.personal_info.email}
-                  </motion.div>
+                  <div className="space-y-2">
+                    <motion.div
+                      className="p-3 bg-red-900/30 border border-red-500/30 rounded-lg text-red-400 text-sm"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      ❌ There was an error sending your message. 
+                    </motion.div>
+                    <motion.button
+                      type="button"
+                      onClick={handleMailtoFallback}
+                      className="w-full bg-gray-700/50 text-gray-300 py-2 px-4 rounded-lg font-medium transition-all duration-300 hover:bg-gray-600/50 border border-gray-600/50"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      📧 Send via Email Client Instead
+                    </motion.button>
+                  </div>
                 )}
               </div>
             </motion.form>

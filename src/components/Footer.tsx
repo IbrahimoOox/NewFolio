@@ -163,12 +163,12 @@ const Footer: React.FC = () => {
               <div className="flex items-start">
                 <ExternalLink className="w-4 h-4 text-purple-400 mt-1 mr-2" />
                 <a
-                  href={resumeData.personal_info.portfolio}
+                  href="/Resum.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-400 hover:text-purple-400 transition-colors"
                 >
-                  View Portfolio
+                  View Resume
                 </a>
               </div>
             </div>
@@ -184,15 +184,7 @@ const Footer: React.FC = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <div className="flex items-center text-gray-500 mb-4 md:mb-0">
-            <span>© {currentYear} Made with</span>
-            <motion.div
-              className="mx-1"
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 5 }}
-            >
-              <Heart className="w-4 h-4 text-red-500" fill="currentColor" />
-            </motion.div>
-            <span>by {resumeData.personal_info.name}</span>
+            <span>© {currentYear} Made by {resumeData.personal_info.name}</span>
           </div>
           
           <div className="text-gray-500 text-sm">

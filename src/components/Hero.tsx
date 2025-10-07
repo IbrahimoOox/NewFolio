@@ -340,12 +340,12 @@ const Hero: React.FC<HeroProps> = ({ scrollToSection }) => {
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <span className="relative flex items-center">
                 <Zap className="w-4 h-4 mr-2" />
-                Me Contacter
+                Contact me
               </span>
             </motion.button>
 
             <motion.button
-              onClick={() => scrollToSection("projects")}
+              onClick={() => scrollToSection("Experience")}
               className="group relative border-2 border-gray-600 text-gray-300 px-8 py-4 rounded-full overflow-hidden"
               whileHover={{
                 scale: 1.05,
@@ -353,7 +353,7 @@ const Hero: React.FC<HeroProps> = ({ scrollToSection }) => {
               }}
               whileTap={{ scale: 0.95 }}
             >
-              <span className="relative">Voir mes Projets</span>
+              <span className="relative">My Projets</span>
             </motion.button>
           </motion.div>
 
